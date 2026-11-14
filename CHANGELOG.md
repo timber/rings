@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/timber/rings/compare/1.0.0...1.0.1) (2026-11-14)
+
+
+### Miscellaneous Chores
+
+* publish releases when the release PR is merged ([cb53539](https://github.com/timber/rings/commit/cb535398d1c2072ea5ac2106ca42bd5c662f5617))
+
 ## 1.0.0 (2026-11-14)
 
 
