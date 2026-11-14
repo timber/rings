@@ -1,0 +1,119 @@
+name: PHP unit tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**workflows/php-unit-tests.yml'
+      - '**.php'
+      - '**composer.*'
+      - '**phpunit.xml.dist'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**workflows/php-unit-tests.yml'
+      - '**.php'
+      - '**composer.*'
+      - '**phpunit.xml.dist'
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  # =============================================================================
+  # Detect PHP versions from composer.json
+  # =============================================================================
+  php-versions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      versions: ${{ steps.versions.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: versions
+        uses: WyriHaximus/github-action-composer-php-versions-in-range@b1da538007a030a09a7d257bd3881829a3544882 # v2.1.0
+
+  # =============================================================================
+  # Compatibility tests: PHP versions x dependency versions
+  # =============================================================================
+  php-unit-tests:
+    needs: php-versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ${{ fromJson(needs.php-versions.outputs.versions) }}
+        dependency-version: ['highest', 'lowest']
+        experimental: [false]
+        coverage: [false]
+        exclude:
+          # mantle-ci installs the SQLite drop-in from its stale `main` branch, whose
+          # PDO::sqliteCreateFunction() call prints a deprecation on PHP 8.5 before the
+          # feed test sends its headers. Make 8.5 blocking once mantle-ci uses `trunk`.
+          - php: '8.5'
+        include:
+          - php: '8.5'
+            dependency-version: 'highest'
+            experimental: true
+            coverage: false
+          # Coverage: PHP 8.3, highest deps
+          - php: '8.3'
+            dependency-version: 'highest'
+            experimental: false
+            coverage: true
+
+    name: PHP ${{ matrix.php }} | ${{ matrix.dependency-version }}${{ matrix.coverage && ' | coverage' || '' }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: ${{ matrix.coverage && 'pcov' || 'none' }}
+          tools: composer:v2
+          extensions: curl, date, dom, iconv, json, libxml, gd, sqlite3, xmlreader
+          ini-values: ${{ matrix.coverage && 'pcov.directory=src' || '' }}
+
+      - name: Setup problem matchers
+        run: |
+          echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+      - uses: ramsey/composer-install@26d8a556604053a9612623447203a691f406fbe6 # v4
+
+      # Only the runtime dependencies: the lowest dev dependencies resolve to Composer 1 era
+      # installers and plugins, which says nothing about what users of this package will get.
+      - name: Downgrade runtime dependencies
+        if: matrix.dependency-version == 'lowest'
+        run: composer update --prefer-lowest --no-interaction --no-progress twig/twig n5s/wp-hook-kit
+
+      - name: Run testsuite
+        run: composer test ${{ matrix.coverage && '-- --coverage-clover build/logs/clover.xml' || '' }}
+
+      - name: Upload coverage to Codecov
+        if: matrix.coverage
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: build/logs/clover.xml
+          token: ${{ secrets.CODECOV_TOKEN }}

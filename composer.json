@@ -1,0 +1,74 @@
+{
+    "name": "timber/rings",
+    "description": "A Query Monitor panel that shows you what's happening in your Twig templates",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nicolas Lemoine",
+            "email": "nico@n5s.dev",
+            "homepage": "https://n5s.dev/"
+        }
+    ],
+    "homepage": "https://github.com/timber/rings",
+    "support": {
+        "issues": "https://github.com/timber/rings/issues",
+        "source": "https://github.com/timber/rings",
+        "security": "https://github.com/timber/rings/security/"
+    },
+    "require": {
+        "php": "^8.3",
+        "n5s/wp-hook-kit": "^1.0",
+        "twig/twig": "^3.15"
+    },
+    "require-dev": {
+        "ergebnis/composer-normalize": "^2.48",
+        "ergebnis/phpstan-rules": "^2.17",
+        "johnbillion/query-monitor": "^4",
+        "mantle-framework/testkit": "^1.22",
+        "php-parallel-lint/php-parallel-lint": "^1.4",
+        "phpro/grumphp": "^2.26",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-phpunit": "^2.1",
+        "rector/rector": "^2.8",
+        "symplify/easy-coding-standard": "^13",
+        "szepeviktor/phpstan-wordpress": "^2.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Timber\\Rings\\": "src/"
+        },
+        "files": [
+            "src/bootstrap.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Timber\\Rings\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "ergebnis/composer-normalize": true,
+            "phpro/grumphp": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "scripts": {
+        "cs": "ecs check",
+        "cs:fix": "ecs check --fix",
+        "grump": "grumphp run",
+        "grump:install": "grumphp git:init",
+        "lint": [
+            "@cs",
+            "rector process --dry-run",
+            "@phpstan"
+        ],
+        "phpstan": "phpstan analyse --memory-limit=1G",
+        "rector": "rector process",
+        "test": "phpunit"
+    }
+}

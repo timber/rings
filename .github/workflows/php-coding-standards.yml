@@ -1,0 +1,69 @@
+name: PHP coding standards
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.php"
+      - "**composer.json"
+      - ".github/workflows/php-coding-standards.yml"
+      - ".github/scripts/ecs-checkstyle.jq"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**.php"
+      - "**composer.json"
+      - ".github/workflows/php-coding-standards.yml"
+      - ".github/scripts/ecs-checkstyle.jq"
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  php-cs:
+    name: PHP coding standards
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+        with:
+          PHP_TOOLS: cs2pr
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
+        with:
+          files: |
+            **/*.php
+          safe_output: true
+
+      # ECS 13.3 dropped its checkstyle format (ecsphp/ecs-src#74), so its JSON report is
+      # converted for cs2pr, which annotates the pull request and fails the job on violations.
+      # Since 13.3.16 (ecsphp/ecs-src#330), ECS hands the run to its Go engine when that engine
+      # covers every configured rule, and the Go engine ignores --output-format. Pointing
+      # ECS_BLINK_BIN at a binary that fails `list-checkers` keeps ECS on the PHP engine.
+      - name: Run coding standards
+        if: steps.changed-files.outputs.all_changed_files != ''
+        env:
+          CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+          ECS_BLINK_BIN: /usr/bin/false
+        run: |
+          ./vendor/bin/ecs check --output-format=json $CHANGED_FILES \
+            | jq -r --arg ws "$PWD/" -f .github/scripts/ecs-checkstyle.jq \
+            | cs2pr

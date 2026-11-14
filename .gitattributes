@@ -1,0 +1,17 @@
+/.actrc export-ignore
+/.gitattributes export-ignore
+/.github export-ignore
+/.gitignore export-ignore
+/.release-please-manifest.json export-ignore
+/CONTRIBUTING.md export-ignore
+/assets/inspector.js export-ignore
+/ecs.php export-ignore
+/grumphp.yml export-ignore
+/package.json export-ignore
+/phpstan.neon.dist export-ignore
+/phpunit.xml.dist export-ignore
+/pnpm-lock.yaml export-ignore
+/pnpm-workspace.yaml export-ignore
+/rector.php export-ignore
+/release-please-config.json export-ignore
+/tests export-ignore

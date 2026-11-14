@@ -1,0 +1,8 @@
+/composer.lock
+/vendor/
+/wp-content/
+/.phpunit.result.cache
+/.phpunit.cache/
+/node_modules/
+/tmp
+/tmp/

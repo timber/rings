@@ -1,0 +1,48 @@
+name: PHP static analysis
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.php'
+      - '**composer.json'
+      - 'phpstan.neon.dist'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.php'
+      - '**composer.json'
+      - 'phpstan.neon.dist'
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  php-static-analysis:
+    name: PHP static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Also installs Query Monitor into wp-content/plugins, which PHPStan scans
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+
+      # The whole codebase, not just the changed files: a change to one file can break
+      # its callers elsewhere, and PHPStan only sees that when it analyses them too.
+      - name: Run static analysis
+        run: ./vendor/bin/phpstan analyse --memory-limit=-1 --error-format=github

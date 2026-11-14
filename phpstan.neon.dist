@@ -1,0 +1,40 @@
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+    scanDirectories:
+        # Query Monitor is installed as a WordPress plugin, not autoloaded by Composer
+        - wp-content/plugins/query-monitor/classes
+        - wp-content/plugins/query-monitor/collectors
+        - wp-content/plugins/query-monitor/data
+        - wp-content/plugins/query-monitor/dispatchers
+        - wp-content/plugins/query-monitor/output
+    dynamicConstantNames:
+        - QM_TWIG_WARN
+        - QM_TWIG_EXPENSIVE
+    ergebnis:
+        noExtends:
+            # Extension points of Query Monitor, Twig, WordPress and Mantle
+            classesAllowedToBeExtended:
+                - QM_Data
+                - QM_DataCollector
+                - QM_Output_Html
+                - Twig\Extension\AbstractExtension
+                - Twig\Extension\ProfilerExtension
+                - Twig\Node\Node
+                - WP_HTML_Tag_Processor
+                - Mantle\Testkit\TestCase
+        # Idiomatic in PHP and WordPress, and used where they're the simplest option
+        noConstructorParameterWithDefaultValue:
+            enabled: false
+        noIsset:
+            enabled: false
+        noNullableReturnTypeDeclaration:
+            enabled: false
+        noParameterPassedByReference:
+            enabled: false
+        noParameterWithNullableTypeDeclaration:
+            enabled: false
+        noParameterWithNullDefaultValue:
+            enabled: false

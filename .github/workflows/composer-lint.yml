@@ -1,0 +1,46 @@
+name: Lint composer
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**composer.json'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**composer.json'
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  composer-lint:
+    name: Composer lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+        with:
+          PHP_TOOLS: 'composer-normalize'
+          INSTALL_DEPS: false
+
+      - name: Lint composer
+        run: |
+          composer validate --strict --no-check-lock
+          composer-normalize --dry-run --no-check-lock

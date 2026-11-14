@@ -1,0 +1,53 @@
+name: PHP Rector
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.php'
+      - '**composer.json'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.php'
+      - '**composer.json'
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  php-rector:
+    name: PHP Rector
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
+        with:
+          files: '**.php'
+          safe_output: true
+
+      - name: Run Rector checks
+        if: steps.changed-files.outputs.all_changed_files != ''
+        env:
+          CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: ./vendor/bin/rector process --dry-run $CHANGED_FILES
